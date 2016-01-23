@@ -13,4 +13,8 @@
         <property name="username" value="root"></property>
         <property name="password" value="123123"></property>
     </bean>
+
+    <bean id="userService" class="springbook.user.service.UserService">
+        <property name="userDao" ref="userDao"/>
+    </bean>
 </beans>
