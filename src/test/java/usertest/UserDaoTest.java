@@ -38,7 +38,7 @@ public class UserDaoTest {
     public void testName() throws Exception {
         System.out.println("hello");
         System.out.println(user1.getName());
-        dao.add(user1);
+        dao.add(user3);
         System.out.println(dao.getCount());
 
     }
@@ -46,7 +46,36 @@ public class UserDaoTest {
     @Test
     public void andAndGet() throws Exception {
         dao.deleteAll();
+        assertThat(dao.getCount(), is(0));
 
+        dao.add(user1);
+        dao.add(user2);
+        assertThat(dao.getCount(), is(2));
+
+        User userget1 = dao.get(user1.getId());
+        checkSameUser(userget1, user1);
+
+        User userget2 = dao.get(user2.getId(    ));
+        checkSameUser(userget2, user2);
+
+    }
+
+    @Test
+    public void update() throws Exception {
+        dao.deleteAll();
+
+        dao.add(user1);
+
+        user1.setName("오민규");
+        user1.setPassword("springno6");
+        user1.setLevel(Level.GOLD);
+        user1.setLogin(1000);
+        user1.setRecommend(999);
+
+        dao.update(user1);
+
+        User user1update = dao.get(user1.getId());
+        checkSameUser(user1, user1update);
     }
 
     private void checkSameUser(User user1, User user2) {
