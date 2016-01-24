@@ -10,6 +10,7 @@ import springbook.user.dao.UserDao;
 import springbook.user.domain.Level;
 import springbook.user.domain.User;
 
+import javax.sql.DataSource;
 import java.util.Arrays;
 import java.util.List;
 
@@ -32,6 +33,9 @@ public class UserServiceTest {
 
     List<User> users;
     User user;
+
+    @Autowired
+    DataSource dataSource;
 
 
     @Before
@@ -107,16 +111,12 @@ public class UserServiceTest {
         }
     }
 
-    @Test
-    public void bean() throws Exception {
-        assertThat(this.userService, is(notNullValue()));
-
-    }
 
     @Test
     public void upgradeAllOrNothing() throws Exception {
         UserService testUserService = new TestUserService(users.get(3).getId());
         testUserService.setUserDao(this.userDao);
+        testUserService.setDataSource(this.dataSource);
         userDao.deleteAll();
         for (User user : users) userDao.add(user);
 
@@ -149,5 +149,10 @@ public class UserServiceTest {
 
     }
 
+    @Test
+    public void bean() throws Exception {
+        assertThat(this.userService, is(notNullValue()));
+
+    }
 
 }
