@@ -15,6 +15,9 @@ import java.util.List;
 
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
+
+import static springbook.user.service.UserService.MIN_LOGOUT_FOR_SILVER;
+import static springbook.user.service.UserService.MIN_RECOMMEND_FOR_GOLD;
 /**
  * Created by dw on 2016. 1. 23..
  */
@@ -34,11 +37,11 @@ public class UserServiceTest {
     @Before
     public void setUp() {
         users = Arrays.asList(
-                new User("bumjin", "박범진", "p1", Level.BASIC, 49, 0),
-                new User("joytouch", "강명성", "p2", Level.BASIC, 50, 0),
-                new User("erwins", "신승한", "p3", Level.SILVER, 60, 29),
-                new User("madnite1", "이상호", "p4", Level.SILVER, 60, 30),
-                new User("green", "오민규", "p5", Level.GOLD, 100, 100)
+                new User("bumjin", "박범진", "p1", Level.BASIC, MIN_LOGOUT_FOR_SILVER-1, 0),
+                new User("joytouch", "강명성", "p2", Level.BASIC, MIN_LOGOUT_FOR_SILVER, 0),
+                new User("erwins", "신승한", "p3", Level.SILVER, 60, MIN_RECOMMEND_FOR_GOLD-1),
+                new User("madnite1", "이상호", "p4", Level.SILVER, 60, MIN_RECOMMEND_FOR_GOLD),
+                new User("green", "오민규", "p5", Level.GOLD, 100, Integer.MAX_VALUE)
         );
         user = new User();
     }
@@ -46,18 +49,17 @@ public class UserServiceTest {
     @Test
     public void upgradeLevels() throws Exception {
         userDao.deleteAll();
-        for(User user : users)
-            userDao.add(user);
+        for(User user : users) userDao.add(user);
 
         userService.upgradeLevels();
 
+        checkLevelUpgraded(users.get(0), false);
         checkLevel(users.get(0), Level.BASIC);
         checkLevel(users.get(1), Level.SILVER);
         checkLevel(users.get(2), Level.SILVER);
         checkLevel(users.get(3), Level.GOLD);
         checkLevel(users.get(4), Level.GOLD);
     }
-
 
     @Test
     public void upgradeLevel() throws Exception {
@@ -70,7 +72,6 @@ public class UserServiceTest {
         }
 
     }
-
 
     @Test
     public void add() throws Exception {
@@ -94,6 +95,16 @@ public class UserServiceTest {
     private void checkLevel(User user, Level expectedLevel) {
         User userUpdate = userDao.get(user.getId());
         assertThat(userUpdate.getLevel(), is(expectedLevel));
+    }
+
+    private void checkLevelUpgraded(User user, boolean upgraded) {
+        User userUpdate = userDao.get(user.getId());
+        if (upgraded) {
+            assertThat(userUpdate.getLevel(), is(user.getLevel().nextLevel()));
+        }
+        else {
+            assertThat(userUpdate.getLevel(), is(user.getLevel()));
+        }
     }
 
     @Test
