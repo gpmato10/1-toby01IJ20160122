@@ -28,6 +28,7 @@ public class UserServiceTest {
     UserDao userDao;
 
     List<User> users;
+    User user;
 
 
     @Before
@@ -39,6 +40,7 @@ public class UserServiceTest {
                 new User("madnite1", "이상호", "p4", Level.SILVER, 60, 30),
                 new User("green", "오민규", "p5", Level.GOLD, 100, 100)
         );
+        user = new User();
     }
 
     @Test
@@ -55,6 +57,20 @@ public class UserServiceTest {
         checkLevel(users.get(3), Level.GOLD);
         checkLevel(users.get(4), Level.GOLD);
     }
+
+
+    @Test
+    public void upgradeLevel() throws Exception {
+        Level[] levels = Level.values();
+        for (Level level : levels) {
+            if (level.nextLevel()  == null) continue;
+            user.setLevel(level);
+            user.upgradeLevel();
+            assertThat(user.getLevel(), is(level.nextLevel()));
+        }
+
+    }
+
 
     @Test
     public void add() throws Exception {
