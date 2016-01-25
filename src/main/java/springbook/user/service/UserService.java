@@ -24,10 +24,10 @@ public class UserService {
     public static final int MIN_LOGOUT_FOR_SILVER = 50;
     public static final int MIN_RECOMMEND_FOR_GOLD = 30;
 
-    private DataSource dataSource;
+    private PlatformTransactionManager transactionManager;
 
-    public void setDataSource(DataSource dataSource) {
-        this.dataSource = dataSource;
+    public void setTransactionManager(PlatformTransactionManager transactionManager) {
+        this.transactionManager = transactionManager;
     }
 
 
@@ -36,11 +36,9 @@ public class UserService {
     }
 
     public void upgradeLevels(){
-        PlatformTransactionManager transactionManager =
-                new DataSourceTransactionManager(dataSource);
 
         TransactionStatus status =
-                transactionManager.getTransaction(new DefaultTransactionDefinition());
+                this.transactionManager.getTransaction(new DefaultTransactionDefinition());
 
         try {
             List<User> users = userDao.getAll();
@@ -49,9 +47,9 @@ public class UserService {
                     upgradeLevel(user);
                 }
             }
-            transactionManager.commit(status);
+            this.transactionManager.commit(status);
         } catch (RuntimeException e) {
-            transactionManager.rollback(status);
+            this.transactionManager.rollback(status);
             throw e;
         }
     }
