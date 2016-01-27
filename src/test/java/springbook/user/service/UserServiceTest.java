@@ -20,8 +20,8 @@ import java.util.List;
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 
-import static springbook.user.service.UserService.MIN_LOGOUT_FOR_SILVER;
-import static springbook.user.service.UserService.MIN_RECOMMEND_FOR_GOLD;
+import static springbook.user.service.UserServiceImpl.MIN_LOGOUT_FOR_SILVER;
+import static springbook.user.service.UserServiceImpl.MIN_RECOMMEND_FOR_GOLD;
 /**
  * Created by dw on 2016. 1. 23..
  */
@@ -30,7 +30,7 @@ import static springbook.user.service.UserService.MIN_RECOMMEND_FOR_GOLD;
 public class UserServiceTest {
 
     @Autowired
-    UserService userService;
+    UserServiceImpl userServiceImpl;
     @Autowired
     UserDao userDao;
 
@@ -65,9 +65,9 @@ public class UserServiceTest {
         for(User user : users) userDao.add(user);
 
         MockMailSender mockMailSender = new MockMailSender();
-        userService.setMailSender(mockMailSender);
+        userServiceImpl.setMailSender(mockMailSender);
 
-        userService.upgradeLevels();
+        userServiceImpl.upgradeLevels();
 
         checkLevelUpgraded(users.get(0), false);
         checkLevel(users.get(0), Level.BASIC);
@@ -102,8 +102,8 @@ public class UserServiceTest {
         User userWithoutLevel = users.get(0);
         userWithoutLevel.setLevel(null);    //레벨이 비어있는 사용자면 BASIC으로 설정되야 한다.
 
-        userService.add(userWithLevel);
-        userService.add(userWithoutLevel);
+        userServiceImpl.add(userWithLevel);
+        userServiceImpl.add(userWithoutLevel);
 
         User userWithLevelRead = userDao.get(userWithLevel.getId());
         User userWithoutLevelRead = userDao.get(userWithoutLevel.getId());
@@ -131,15 +131,19 @@ public class UserServiceTest {
 
     @Test
     public void upgradeAllOrNothing() throws Exception {
-        UserService testUserService = new TestUserService(users.get(3).getId());
+        UserServiceImpl testUserService = new TestUserService(users.get(3).getId());
         testUserService.setUserDao(this.userDao);
-        testUserService.setTransactionManager(transactionManager);
         testUserService.setMailSender(mailSender);
+
+        UserServiceTx txUserService = new UserServiceTx();
+        txUserService.setTransactionManager(transactionManager);
+        txUserService.setUserService(testUserService);
+
         userDao.deleteAll();
         for (User user : users) userDao.add(user);
 
         try {
-            testUserService.upgradeLevels();
+            txUserService.upgradeLevels();
             fail("TestUserServiceException expected");
         }
         catch (TestUserServiceException e) { }
@@ -148,7 +152,7 @@ public class UserServiceTest {
 
     }
 
-    static class TestUserService extends UserService {
+    static class TestUserService extends UserServiceImpl {
         private String id;
 
         public TestUserService(String id) {
@@ -167,10 +171,6 @@ public class UserServiceTest {
 
     }
 
-    @Test
-    public void bean() throws Exception {
-        assertThat(this.userService, is(notNullValue()));
 
-    }
 
 }
