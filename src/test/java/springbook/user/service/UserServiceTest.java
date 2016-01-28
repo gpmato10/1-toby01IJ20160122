@@ -14,6 +14,7 @@ import springbook.user.domain.Level;
 import springbook.user.domain.User;
 
 import javax.sql.DataSource;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -59,27 +60,32 @@ public class UserServiceTest {
     }
 
     @Test
-    @DirtiesContext // context 의 DI 설정을 변경하려는 설정
     public void upgradeLevels() throws Exception {
-        userDao.deleteAll();
-        for(User user : users) userDao.add(user);
+        UserServiceImpl userServiceImpl = new UserServiceImpl();
 
-        MockMailSender mockMailSender = new MockMailSender();
+        MockUserDao mockUserDao = new MockUserDao(this.users);  //고립된 테스트에선 테스트대상 object 직접생성하면 됨
+        userServiceImpl.setUserDao(mockUserDao);
+
+        MockMailSender mockMailSender = new MockMailSender();   // 목 오브젝트로 만든 UserDao 를 직접 DI 해준다
         userServiceImpl.setMailSender(mockMailSender);
 
         userServiceImpl.upgradeLevels();
 
-        checkLevelUpgraded(users.get(0), false);
-        checkLevel(users.get(0), Level.BASIC);
-        checkLevel(users.get(1), Level.SILVER);
-        checkLevel(users.get(2), Level.SILVER);
-        checkLevel(users.get(3), Level.GOLD);
-        checkLevel(users.get(4), Level.GOLD);
+        List<User> updated = mockUserDao.getUpdated();  // MockUserDao 로부터 업데이트 결과를 가져온다.
+        assertThat(updated.size(), is(2));
+        checkUserAndLevel(updated.get(0), "joytouch", Level.SILVER);    // 업데이트 횟수와 정보를 확인한다
+        checkUserAndLevel(updated.get(1), "madnite1", Level.GOLD);
 
         List<String> request = mockMailSender.getRequests();
         assertThat(request.size(), is(2));
         assertThat(request.get(0), is(users.get(1).getEmail()));
         assertThat(request.get(1), is(users.get(3).getEmail()));
+    }
+
+    // id 와 level 을 확인하는 간단한 헬퍼 메소드
+    private void checkUserAndLevel(User updated, String expectedId, Level expectedLevel) {
+        assertThat(updated.getId(), is(expectedId));
+        assertThat(updated.getLevel(), is(expectedLevel));
     }
 
     @Test
@@ -128,6 +134,48 @@ public class UserServiceTest {
         }
     }
 
+    static class MockUserDao implements UserDao {
+        private List<User> users;
+        private List<User> updated = new ArrayList<>();
+
+        public MockUserDao(List<User> users) {
+            this.users = users;
+        }
+
+        public List<User> getUpdated() {
+            return this.updated;
+        }
+
+
+        @Override
+        public List<User> getAll() {
+            return this.users;  // 스텁 기능 제공
+        }
+
+        @Override
+        public void update(User user) {
+            updated.add(user);  // 목 오브젝트 기능 제공
+        }
+
+        // 아래 4개 메소드는 테스트에 사용되지 않는 메소드
+        @Override
+        public void add(User user) {
+            throw new UnsupportedOperationException();
+        }
+        @Override
+        public void deleteAll() {
+            throw new UnsupportedOperationException();
+        }
+        @Override
+        public User get(String id) {
+            throw new UnsupportedOperationException();
+        }
+        @Override
+        public int getCount() {
+            throw new UnsupportedOperationException();
+        }
+
+    }
 
     @Test
     public void upgradeAllOrNothing() throws Exception {
