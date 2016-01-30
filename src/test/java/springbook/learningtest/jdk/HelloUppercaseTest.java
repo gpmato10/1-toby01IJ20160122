@@ -10,6 +10,9 @@ import java.lang.reflect.Proxy;
 public class HelloUppercaseTest {
     @Test
     public void helloUppercaseTest() throws Exception {
+        // 다이내믹 프록시를 이용하기 위해
+        // 다이내믹 프록시를 생성하는 코드. 생성해서 proxiedHello 변수에 담는다.
+
         Hello proxiedHello = (Hello) Proxy.newProxyInstance(
                 getClass().getClassLoader(),
                 new Class[] { Hello.class },
